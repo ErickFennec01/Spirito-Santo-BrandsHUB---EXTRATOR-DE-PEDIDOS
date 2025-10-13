@@ -1,0 +1,15 @@
+# render.yaml
+
+services:
+  - type: web
+    name: extrator-pedidos-atacado
+    env: python
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "gunicorn core.wsgi"
+    envVars:
+      - key: BH_API_EMAIL
+        sync: false
+      - key: BH_API_PASSWORD
+        sync: false
+      - key: BH_API_ACCOUNT_ID
+        sync: false

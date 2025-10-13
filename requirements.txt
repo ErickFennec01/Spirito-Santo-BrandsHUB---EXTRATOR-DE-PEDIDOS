@@ -1,0 +1,7 @@
+django
+djangorestframework
+requests
+pandas
+xlsxwriter
+gunicorn
+python-dotenv
