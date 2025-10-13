@@ -9,6 +9,10 @@ from rest_framework import status
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.http import JsonResponse
+from dotenv import load_dotenv
+
+load_dotenv()  # Carrega as variáveis de ambiente do arquivo .env
+
 # --- Configurações da API ---
 API_URL = "https://seller.api.brandshub.com.br/"
 
@@ -24,6 +28,11 @@ def get_auth_token():
     """
     print("Tentando realizar o login para obter o token...")
     
+    # Verifica se as variáveis de ambiente foram definidas
+    if not all([EMAIL, PASSWORD, ACCOUNT_ID]):
+        print("Erro: As variáveis de ambiente 'BH_API_EMAIL', 'BH_API_PASSWORD' ou 'BH_API_ACCOUNT_ID' não estão configuradas.")
+        return None
+
     LOGIN_QUERY = f"""
     query {{
         login(
