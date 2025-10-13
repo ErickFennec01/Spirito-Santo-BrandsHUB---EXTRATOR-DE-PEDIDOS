@@ -27,11 +27,6 @@ def get_auth_token():
     Realiza o login na API e retorna o token de acesso.
     """
     print("Tentando realizar o login para obter o token...")
-    
-    # Verifica se as variáveis de ambiente foram definidas
-    if not all([EMAIL, PASSWORD, ACCOUNT_ID]):
-        print("Erro: As variáveis de ambiente 'BH_API_EMAIL', 'BH_API_PASSWORD' ou 'BH_API_ACCOUNT_ID' não estão configuradas.")
-        return None
 
     LOGIN_QUERY = f"""
     query {{
@@ -47,18 +42,18 @@ def get_auth_token():
         }}
     }}
     """
-    
+
     headers = {
         "Content-Type": "application/json",
         "User-Agent": USER_AGENT
     }
-    
+
     data = {"query": LOGIN_QUERY}
-    
+
     try:
         response = requests.post(API_URL, headers=headers, json=data)
         response.raise_for_status()
-        
+
         json_response = response.json()
         if "errors" in json_response:
             print("Erro(s) da API:")
@@ -73,7 +68,7 @@ def get_auth_token():
         else:
             print(f"Falha no login: {login_data.get('message', 'Mensagem de erro não disponível')}")
             return None
-            
+
     except requests.exceptions.RequestException as e:
         print(f"Erro ao tentar se conectar ou fazer login: {e}")
         return None
@@ -101,6 +96,7 @@ def get_order_data(auth_token, cnpj, codigo_produto):
                         quantity
                         product {{
                             name
+                            code
                         }}
                         sku {{
                             code
@@ -118,15 +114,15 @@ def get_order_data(auth_token, cnpj, codigo_produto):
         }}
     }}
     """
-    
+
     headers = {
         "Content-Type": "application/json",
         "Authorization": auth_token,
         "User-Agent": USER_AGENT
     }
-    
+
     data = {"query": GRAPHQL_QUERY}
-    
+
     try:
         response = requests.post(API_URL, headers=headers, json=data)
         response.raise_for_status()
@@ -145,22 +141,33 @@ def process_data_for_excel(api_data, cnpj):
 
     processed_data = []
     buyer_name = None
-    
+
+    # Mapeamento dos tamanhos da API para o formato desejado
+    tamanho_map = {
+        "Pequeno": "P",
+        "Médio": "M",
+        "Grande": "G",
+        "Muito grande": "GG",
+        "Extra grande": "XG"
+        # Adicione outros mapeamentos se necessário
+    }
+
     for order in api_data['data']['orders']['items']:
         buyer_name = order.get('buyer', {}).get('name', 'N/A')
         basket_items = order.get('basket', {}).get('items', [])
-        
+
         for item in basket_items:
             sku = item.get('sku', {}).get('code', 'N/A')
             quantity = item.get('quantity', 'N/A')
             
+            product_code = item.get('product', {}).get('code', 'N/A')
             description = item.get('product', {}).get('name', 'N/A')
             price = item.get('values', {}).get('total', 'N/A')
 
             unit_price = 'N/A'
             if isinstance(quantity, (int, float)) and isinstance(price, (int, float)) and quantity > 0:
                 unit_price = price / quantity
-            
+
             color = ""
             size = ""
             variants = item.get('sku', {}).get('variant', [])
@@ -169,20 +176,23 @@ def process_data_for_excel(api_data, cnpj):
                     if variant.get('type') == 'color':
                         color = variant.get('name', 'N/A')
                     elif variant.get('type') == 'size':
-                        size = variant.get('name', 'N/A')
-            
+                        # Converte o tamanho para o formato desejado
+                        size_from_api = variant.get('name', 'N/A')
+                        size = tamanho_map.get(size_from_api, size_from_api)
+
             processed_data.append({
                 "CNPJ": cnpj,
                 "Nome do CNPJ": buyer_name,
-                "SKU": sku,
+                "Referência Mãe": product_code,
                 "Descrição": description,
+                "SKU": sku,
                 "COR": color,
                 "TAMANHO": size,
                 "Quantidade": quantity,
                 "Preço Unitário": unit_price,
                 "Preço Total": price
             })
-            
+
     return processed_data, buyer_name
 
 def export_to_excel_in_memory(data):
@@ -211,27 +221,23 @@ class ProcessarPedido(APIView):
 
         auth_token = get_auth_token()
         if not auth_token:
-            return Response({"erro": "Falha na autenticação da API. Verifique suas variáveis de ambiente."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({"erro": "Falha na autenticação da API. Verifique suas credenciais.", "details": "Token não obtido."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
         api_response = get_order_data(auth_token, cnpj, codigo_produto)
-        
+
         if api_response:
             excel_data, buyer_name = process_data_for_excel(api_response, cnpj)
-            
+
             if excel_data:
                 excel_file_in_memory = export_to_excel_in_memory(excel_data)
                 sanitized_name = re.sub(r'[\\/*?:"<>|]', "", buyer_name or "Pedido").strip()
                 filename = f"Pedido - {sanitized_name}.xlsx"
-                
+
                 response = HttpResponse(excel_file_in_memory.getvalue(), content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
                 response['Content-Disposition'] = f'attachment; filename="{filename}"'
                 return response
 
-
         return Response({"erro": "Nenhum dado encontrado para o pedido."}, status=status.HTTP_404_NOT_FOUND)
-
-
-
 
 def health_check(request):
     return JsonResponse({"status": "ok"})
