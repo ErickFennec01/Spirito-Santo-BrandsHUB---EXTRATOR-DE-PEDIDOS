@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.http import HttpResponse
 from django.shortcuts import render
-
+from django.http import JsonResponse
 # --- Configurações da API ---
 API_URL = "https://seller.api.brandshub.com.br/"
 
@@ -218,4 +218,11 @@ class ProcessarPedido(APIView):
                 response['Content-Disposition'] = f'attachment; filename="{filename}"'
                 return response
 
+
         return Response({"erro": "Nenhum dado encontrado para o pedido."}, status=status.HTTP_404_NOT_FOUND)
+
+
+
+
+def health_check(request):
+    return JsonResponse({"status": "ok"})
