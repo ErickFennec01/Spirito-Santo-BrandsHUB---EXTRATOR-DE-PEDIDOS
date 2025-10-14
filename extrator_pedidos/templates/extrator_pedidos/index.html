@@ -8,23 +8,25 @@
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background: #eef2f5; /* Fundo de segurança caso o vídeo não carregue */
+            background: #eef2f5;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
             margin: 0;
             position: relative;
+            overflow: hidden; /* Evita a barra de rolagem */
         }
 
         #video-background {
             position: fixed;
-            right: 0;
-            bottom: 0;
+            top: 50%;
+            left: 50%;
             min-width: 100%;
             min-height: 100%;
             width: auto;
             height: auto;
+            transform: translate(-50%, -50%); /* Centraliza o vídeo */
             z-index: -1;
             background: #eef2f5;
         }
