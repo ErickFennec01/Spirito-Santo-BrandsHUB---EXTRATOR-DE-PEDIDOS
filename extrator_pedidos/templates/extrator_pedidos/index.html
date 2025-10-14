@@ -17,6 +17,18 @@
             position: relative;
         }
 
+        #video-background {
+            position: fixed;
+            right: 0;
+            bottom: 0;
+            min-width: 100%;
+            min-height: 100%;
+            width: auto;
+            height: auto;
+            z-index: -1;
+            background: #eef2f5;
+        }
+
         .container {
             background-color: #fff;
             padding: 40px;
@@ -118,6 +130,10 @@
     </style>
 </head>
 <body>
+    <video autoplay muted loop id="video-background">
+        <source src="https://res.cloudinary.com/dwfpynr69/video/upload/videoplayback_fqtun2.mp4" type="video/mp4">
+        Seu navegador não suporta a tag de vídeo.
+    </video>
     <div class="container">
         <img src="https://res.cloudinary.com/dwfpynr69/image/upload/v1760374883/logo_aeuhob.png" alt="Brandshub Logo" class="container-logo">
         <h1>Extrator de Pedidos Atacado</h1>
@@ -190,4 +206,3 @@
     </script>
 </body>
 </html>
-
