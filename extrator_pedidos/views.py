@@ -144,6 +144,7 @@ def process_data_for_excel(api_data, cnpj):
 
     # Mapeamento dos tamanhos da API para o formato desejado
     tamanho_map = {
+        "Muito pequeno": "PP",
         "Pequeno": "P",
         "Médio": "M",
         "Grande": "G",
@@ -241,3 +242,4 @@ class ProcessarPedido(APIView):
 
 def health_check(request):
     return JsonResponse({"status": "ok"})
+
